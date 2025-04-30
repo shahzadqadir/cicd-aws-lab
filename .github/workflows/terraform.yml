@@ -1,0 +1,46 @@
+name: Deploy AWS Infrastructure with Terraform
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  terraform:
+    name: Terraform Plan and Apply
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+    steps:
+      # step 1: Checkout the code from the repository
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      # step 2: Install specified version of Terraform CLI
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      # step 3: Initialize the Terraform working directory
+      - name: Terraform Init
+        run: terraform init
+
+      # Step 4: Validate Terraform code to catch syntax or config errors
+      - name: Terraform Validate
+        run: terraform validate
+
+      # Step 5: Show the execution plan (preview changes)
+      - name: Terraform Plan
+        run: terraform plan
+
+      # Step 6: Apply Terraform plan onlhy on push to main (not for PRs)
+      - name: Terrraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve # Auto-approve to skip manual confirmation
